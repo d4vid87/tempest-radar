@@ -7,6 +7,7 @@ ROOT = os.path.abspath(os.path.join(SPECPATH, ".."))  # noqa: F821
 
 datas = [(os.path.join(ROOT, "static"), "static")]
 datas += collect_data_files("metpy")
+datas += collect_data_files("pint")  # unit registry text files metpy needs
 
 hiddenimports = (
     collect_submodules("uvicorn")

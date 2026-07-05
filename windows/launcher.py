@@ -22,6 +22,11 @@ if "DATA_DIR" not in os.environ:
     os.environ["DATA_DIR"] = str(Path(base) / "TempestRadar")
 Path(os.environ["DATA_DIR"]).mkdir(parents=True, exist_ok=True)
 
+# Frozen --noconsole apps have no stdio; give tracebacks/logs a real home.
+if getattr(sys, "frozen", False):
+    _log = open(Path(os.environ["DATA_DIR"]) / "launcher.log", "a", buffering=1)
+    sys.stdout = sys.stderr = _log
+
 # Make the bundled app importable both frozen and from a source checkout.
 BASE = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(BASE))
@@ -102,4 +107,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        import traceback
+        traceback.print_exc()
+        raise

@@ -19,17 +19,35 @@ jobs:
         run: pip install -r windows/requirements-win.txt
       - name: Build exe
         run: pyinstaller windows/TempestRadar.spec
-      - name: Smoke test
+      - name: Smoke test (source)
         shell: pwsh
         run: |
-          $p = Start-Process dist/TempestRadar.exe -PassThru -Environment @{ TEMPEST_NO_BROWSER = "1" }
+          $env:TEMPEST_NO_BROWSER = "1"
+          $p = Start-Process python -ArgumentList "windows/launcher.py" -PassThru -RedirectStandardError src-err.log -RedirectStandardOutput src-out.log
           $ok = $false
-          foreach ($i in 1..60) {
+          foreach ($i in 1..30) {
             Start-Sleep 2
             try { Invoke-WebRequest http://localhost:5555/healthz -UseBasicParsing | Out-Null; $ok = $true; break } catch {}
           }
           Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
-          if (-not $ok) { throw "server never became healthy" }
+          if (-not $ok) { Get-Content src-out.log, src-err.log -ErrorAction SilentlyContinue; throw "source launcher never became healthy" }
+      - name: Smoke test (exe)
+        shell: pwsh
+        run: |
+          $env:TEMPEST_NO_BROWSER = "1"
+          $env:PORT = "5677"
+          $p = Start-Process dist/TempestRadar.exe -PassThru -RedirectStandardError exe-err.log -RedirectStandardOutput exe-out.log
+          $ok = $false
+          foreach ($i in 1..60) {
+            Start-Sleep 2
+            if ($p.HasExited) { break }
+            try { Invoke-WebRequest http://localhost:5677/healthz -UseBasicParsing | Out-Null; $ok = $true; break } catch {}
+          }
+          Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          if (-not $ok) {
+            Get-Content exe-out.log, exe-err.log, "$env:LOCALAPPDATA/TempestRadar/launcher.log" -ErrorAction SilentlyContinue
+            throw "exe never became healthy"
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: TempestRadar-windows
