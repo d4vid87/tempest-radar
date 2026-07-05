@@ -211,6 +211,57 @@ async function drawTide(station) {
   } catch { $("wb-tide").hidden = true; }
 }
 
+/* --------------------------- alerts + EAS sound --------------------------- */
+let soundOn = false, knownAlertIds = null, easCtx = null;
+const EAS_EVENTS = new Set(["Tornado Warning", "Severe Thunderstorm Warning",
+  "Flash Flood Warning", "Extreme Wind Warning", "Snow Squall Warning",
+  "Dust Storm Warning", "Special Marine Warning", "Storm Surge Warning",
+  "Hurricane Warning", "Blizzard Warning", "Ice Storm Warning"]);
+function playEAS(seconds = 2.5) {
+  try {
+    easCtx = easCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const t = easCtx.currentTime, g = easCtx.createGain();
+    g.gain.setValueAtTime(0.001, t);
+    g.gain.linearRampToValueAtTime(0.22, t + 0.04);
+    g.gain.setValueAtTime(0.22, t + seconds - 0.08);
+    g.gain.linearRampToValueAtTime(0.001, t + seconds);
+    g.connect(easCtx.destination);
+    for (const f of [853, 960]) {
+      const o = easCtx.createOscillator();
+      o.type = "sine"; o.frequency.value = f;
+      o.connect(g); o.start(t); o.stop(t + seconds);
+    }
+  } catch { /* no audio */ }
+}
+$("wall-sound").onclick = () => {
+  soundOn = !soundOn;
+  $("wall-sound").textContent = soundOn ? "🔊 sound" : "🔇 sound";
+  if (soundOn) playEAS(0.5);          // unlock audio + confirm
+};
+function fmtWhen(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return isNaN(d) ? iso : d.toLocaleString([], { weekday: "short",
+    hour: "numeric", minute: "2-digit" });
+}
+function renderWallAlerts() {
+  const panel = $("wall-alerts-panel");
+  const alerts = lastState.alerts || [];
+  panel.innerHTML = alerts.length ? alerts.map(a =>
+    `<div class="wal-item">
+       <h4>${esc(a.event)} — ${esc(a.severity)}
+         <span>${a.expires ? "until " + esc(fmtWhen(a.expires)) : ""}</span></h4>
+       <p>${esc(a.headline || "")}</p>
+       ${a.instruction ? `<p class="instr">⚠ ${esc(a.instruction)}</p>` : ""}
+     </div>`).join("")
+    : '<div class="wal-item"><h4>No active alerts</h4></div>';
+}
+$("wb-alerts").onclick = () => {
+  const panel = $("wall-alerts-panel");
+  panel.hidden = !panel.hidden;
+  if (!panel.hidden) renderWallAlerts();
+};
+
 /* ------------------------------ data poll ------------------------------ */
 async function poll() {
   try {
@@ -221,6 +272,14 @@ async function poll() {
       ? `⚠ ${alerts.length} ACTIVE — ${alerts[0].event.toUpperCase()}`
       : "NO ACTIVE ALERTS";
     el.classList.toggle("hot", alerts.length > 0);
+    const ids = new Set(alerts.map(a => a.id));
+    if (knownAlertIds !== null && soundOn) {
+      const fresh = alerts.filter(a => !knownAlertIds.has(a.id));
+      if (fresh.some(a => EAS_EVENTS.has(a.event) || a.severity === "Extreme"))
+        playEAS();
+    }
+    knownAlertIds = ids;
+    if (!$("wall-alerts-panel").hidden) renderWallAlerts();
     refreshNatives();
   } catch { /* retry next tick */ }
 }

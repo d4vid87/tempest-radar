@@ -86,6 +86,24 @@ tempestwx.com) and a **personal access token**
 for alerts/map centering, set a display label, and customize the ticker
 feeds. Everything persists in the `data/` volume; no rebuild needed.
 
+### Windows (no Docker needed)
+
+Download **TempestRadar.exe** from the
+[Releases page](../../releases) and double-click it. The app runs from the
+system tray (green radar icon): right-click it to open the console, the
+wall, your data folder, or to quit. Your settings and radar cache live in
+`%LOCALAPPDATA%\TempestRadar`.
+
+First-run notes:
+
+- **SmartScreen** may warn about an unsigned app — click *More info → Run
+  anyway*.
+- Allow the **Windows Firewall** prompt if you want to open the wall from a
+  TV or another device on your network (`http://<pc-ip>:5555/wall`).
+- To build the exe yourself: `pip install -r windows/requirements-win.txt`
+  then `pyinstaller windows/TempestRadar.spec` (also runs automatically in
+  GitHub Actions on every `v*` tag).
+
 ## Configuration
 
 All settings live in the in-app menu. Power users can also edit

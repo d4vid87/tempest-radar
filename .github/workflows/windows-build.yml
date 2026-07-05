@@ -1,0 +1,41 @@
+name: windows-build
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r windows/requirements-win.txt
+      - name: Build exe
+        run: pyinstaller windows/TempestRadar.spec
+      - name: Smoke test
+        shell: pwsh
+        run: |
+          $p = Start-Process dist/TempestRadar.exe -PassThru -Environment @{ TEMPEST_NO_BROWSER = "1" }
+          $ok = $false
+          foreach ($i in 1..60) {
+            Start-Sleep 2
+            try { Invoke-WebRequest http://localhost:5555/healthz -UseBasicParsing | Out-Null; $ok = $true; break } catch {}
+          }
+          Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          if (-not $ok) { throw "server never became healthy" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TempestRadar-windows
+          path: dist/TempestRadar.exe
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/TempestRadar.exe

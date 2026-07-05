@@ -527,6 +527,65 @@ function drawSpark(values) {
 /* ------------------------------ alerts + sound ------------------------------ */
 const sndWarn = new Audio("/static/sounds/alert_warning.wav");
 const sndWatch = new Audio("/static/sounds/alert_watch.wav");
+/* EAS attention signal: the real dual-tone (853 Hz + 960 Hz) used by the
+   Emergency Alert System, synthesized with WebAudio — no audio file needed */
+let _easCtx = null;
+function playEAS(seconds = 2.5) {
+  try {
+    _easCtx = _easCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = _easCtx, t = ctx.currentTime;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.001, t);
+    g.gain.linearRampToValueAtTime(0.22, t + 0.04);
+    g.gain.setValueAtTime(0.22, t + seconds - 0.08);
+    g.gain.linearRampToValueAtTime(0.001, t + seconds);
+    g.connect(ctx.destination);
+    for (const f of [853, 960]) {
+      const o = ctx.createOscillator();
+      o.type = "sine"; o.frequency.value = f;
+      o.connect(g); o.start(t); o.stop(t + seconds);
+    }
+  } catch { /* audio unavailable */ }
+}
+/* events that trigger the EAS tone instead of the normal warning chirp */
+const EAS_EVENTS = new Set(["Tornado Warning", "Severe Thunderstorm Warning",
+  "Flash Flood Warning", "Extreme Wind Warning", "Snow Squall Warning",
+  "Dust Storm Warning", "Special Marine Warning", "Storm Surge Warning",
+  "Hurricane Warning", "Blizzard Warning", "Ice Storm Warning"]);
+
+const SEV_LABEL = { Extreme: "EXTREME", Severe: "SEVERE",
+                    Moderate: "MODERATE", Minor: "MINOR" };
+function fmtWhen(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return isNaN(d) ? iso : d.toLocaleString([], { weekday: "short",
+    hour: "numeric", minute: "2-digit" });
+}
+function showAlertsModal() {
+  const box = $("alerts-list");
+  const alerts = S.lastAlerts || [];
+  box.innerHTML = alerts.length ? alerts.map((a, i) =>
+    `<div class="al-item sev-b-${a.severity || "Unknown"}">
+       <div class="al-head" data-al="${i}">
+         <span class="al-badge sev-${a.severity || "Unknown"}">${SEV_LABEL[a.severity] || "?"}</span>
+         <b>${esc(a.event)}</b>
+         <span class="al-exp">${a.expires ? "until " + esc(fmtWhen(a.expires)) : ""}</span>
+       </div>
+       <div class="al-body" hidden>
+         <p class="al-headline">${esc(a.headline || "")}</p>
+         ${a.description ? `<pre class="al-desc">${esc(a.description)}</pre>` : ""}
+         ${a.instruction ? `<p class="al-instr">⚠ ${esc(a.instruction)}</p>` : ""}
+       </div>
+     </div>`).join("")
+    : '<div class="set-hint">No active alerts for your area. 🎉</div>';
+  box.querySelectorAll(".al-head").forEach(h => h.onclick = () => {
+    const b = h.nextElementSibling; b.hidden = !b.hidden; });
+  if (alerts.length === 1)
+    box.querySelector(".al-body").hidden = false;
+  $("alerts-modal").hidden = false;
+}
+$("alert-badge").onclick = showAlertsModal;
+$("alerts-close").onclick = () => $("alerts-modal").hidden = true;
 $("sound-toggle").onclick = () => {
   S.soundOn = !S.soundOn;
   $("sound-toggle").textContent = S.soundOn ? "🔊" : "🔇";
@@ -553,9 +612,12 @@ function renderAlerts(alerts) {
   if (S.knownAlertIds !== null && S.soundOn) {
     const fresh = alerts.filter(a => !S.knownAlertIds.has(a.id));
     if (fresh.length) {
+      const eas = fresh.some(a => EAS_EVENTS.has(a.event) ||
+        a.severity === "Extreme");
       const urgent = fresh.some(a => a.event.endsWith("Warning") ||
         ["Extreme", "Severe"].includes(a.severity));
-      (urgent ? sndWarn : sndWatch).play().catch(() => {});
+      if (eas) playEAS();
+      else (urgent ? sndWarn : sndWatch).play().catch(() => {});
     }
   }
   S.knownAlertIds = ids;

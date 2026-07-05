@@ -8,7 +8,7 @@
       onerror="this.onerror=null;this.href='https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css'">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/3.6.2/maplibre-gl.min.js"
         onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js';document.head.appendChild(s);"></script>
-<link rel="stylesheet" href="/static/style.css?v=13">
+<link rel="stylesheet" href="/static/style.css?v=14">
 </head>
 <body>
 
@@ -176,6 +176,13 @@
   </div>
 </div>
 
+<div id="alerts-modal" hidden>
+  <div id="alerts-box">
+    <div class="set-head"><b>⚠ Active alerts</b><button id="alerts-close">✕</button></div>
+    <div id="alerts-list"></div>
+  </div>
+</div>
+
 <div id="loc-modal" hidden>
   <div id="loc-box">
     <div class="set-head"><b>⌖ Custom locations</b><button id="loc-close">✕</button></div>
@@ -221,7 +228,7 @@
 <script src="/static/map-engine.js?v=14"></script>
 <script src="/static/radar-core.js?v=8"></script>
 <script src="/static/timeline.js?v=8"></script>
-<script src="/static/app.js?v=15"></script>
+<script src="/static/app.js?v=16"></script>
 <script src="/static/overlays.js?v=2"></script>
 <script src="/static/layout.js?v=9"></script>
 <script src="/static/history.js?v=8"></script>

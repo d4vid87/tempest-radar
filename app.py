@@ -29,7 +29,9 @@ from workers.radar import RadarWorker
 from workers.level2 import L2Store, pack_artifact
 from workers.tempest import TempestWorker, fetch_station_meta, seed_observation
 
-STATIC = Path(__file__).parent / "static"
+# When frozen by PyInstaller, bundled files live under sys._MEIPASS.
+BASE_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
+STATIC = BASE_DIR / "static"
 
 # ---------------------------------------------------------------------------
 # Built-in themes. Custom ones live in /data/themes.json (same shape) and are

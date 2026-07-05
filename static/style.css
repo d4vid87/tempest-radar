@@ -347,6 +347,40 @@ input[type=range] { accent-color: var(--accent); }
   border-color: var(--accent) !important; }
 .storm-pop a { color: var(--accent); font-size: 12px; }
 
+/* ---------------------------- alerts modal ---------------------------- */
+#alerts-modal { position: fixed; inset: 0; z-index: 2100;
+  background: rgba(0,0,0,0.55); display: flex;
+  align-items: center; justify-content: center; }
+#alerts-box { background: var(--panel); border: 1px solid var(--border);
+  border-radius: 16px; padding: 16px 20px; width: min(640px, 94vw);
+  max-height: 86vh; overflow-y: auto; }
+#alerts-close { border: none; background: none; color: var(--text);
+  font-size: 15px; cursor: pointer; }
+.al-item { border: 1px solid var(--border); border-left-width: 4px;
+  border-radius: 10px; margin: 8px 0; overflow: hidden; }
+.al-item.sev-b-Extreme { border-left-color: var(--danger); }
+.al-item.sev-b-Severe { border-left-color: #ff8c1a; }
+.al-item.sev-b-Moderate { border-left-color: var(--warn); }
+.al-item.sev-b-Minor { border-left-color: #6fb7ff; }
+.al-head { display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  cursor: pointer; }
+.al-head:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.al-head b { flex: 1; font-size: 13.5px; }
+.al-exp { color: var(--muted); font-size: 11.5px; white-space: nowrap; }
+.al-badge { font-size: 9.5px; font-weight: 800; letter-spacing: 1px;
+  padding: 3px 8px; border-radius: 10px; flex: none; }
+.al-badge.sev-Extreme { background: var(--danger); color: #fff; }
+.al-badge.sev-Severe { background: #ff8c1a; color: #fff; }
+.al-badge.sev-Moderate { background: var(--warn); color: #0b0f14; }
+.al-badge.sev-Minor { background: #6fb7ff; color: #0b0f14; }
+.al-badge.sev-Unknown { background: var(--border); color: var(--muted); }
+.al-body { padding: 2px 14px 12px; font-size: 12.5px; }
+.al-headline { color: var(--accent); margin: 6px 0; font-weight: 600; }
+.al-desc { white-space: pre-wrap; font: 11.5px/1.5 ui-monospace, monospace;
+  color: var(--text); background: var(--bg); border-radius: 8px;
+  padding: 10px 12px; max-height: 260px; overflow-y: auto; margin: 8px 0; }
+.al-instr { color: var(--warn); font-weight: 600; margin: 6px 0; }
+
 /* ------------------------- Windy embed mode ------------------------- */
 #windy-wrap { position: absolute; inset: 0; z-index: 5; background: var(--bg); }
 #windy-wrap iframe { width: 100%; height: 100%; border: 0; }
