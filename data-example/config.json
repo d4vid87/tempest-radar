@@ -1,0 +1,16 @@
+{
+  "station_id": null,
+  "station_label": "",
+  "show_station_marker": true,
+  "location": null,
+  "news_feeds": [
+    {"name": "Drudge",  "url": "https://feeds.feedburner.com/DrudgeReportFeed"},
+    {"name": "NBC DFW", "url": "https://www.nbcdfw.com/news/feed"},
+    {"name": "FOX 4",   "url": "https://www.fox4news.com/rss/category/news"}
+  ],
+  "wx_feeds": [
+    {"name": "SPC Watch",   "url": "https://www.spc.noaa.gov/products/spcwwrss.xml"},
+    {"name": "SPC Meso",    "url": "https://www.spc.noaa.gov/products/spcmdrss.xml"},
+    {"name": "NHC Atlantic","url": "https://www.nhc.noaa.gov/index-at.xml"}
+  ]
+}

@@ -1,0 +1,15 @@
+services:
+  tempest-radar:
+    build: .
+    container_name: tempest-radar
+    ports:
+      - "5555:5555"
+    environment:
+      # All of these are OPTIONAL — you can configure everything from the
+      # in-app settings menu (⚙) on first run instead.
+      - TEMPEST_TOKEN=${TEMPEST_TOKEN:-}
+      - STATION_ID=${STATION_ID:-}
+      - RADAR_SITE=${RADAR_SITE:-KFWS}
+    volumes:
+      - ./data:/data
+    restart: unless-stopped

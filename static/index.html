@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tempest Radar</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/3.6.2/maplibre-gl.min.css"
+      onerror="this.onerror=null;this.href='https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css'">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/3.6.2/maplibre-gl.min.js"
+        onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js';document.head.appendChild(s);"></script>
+<link rel="stylesheet" href="/static/style.css?v=13">
+</head>
+<body>
+
+<button id="menu-btn" class="fab" title="Menu"><span></span><span></span><span></span></button>
+<div id="main-menu" hidden>
+  <div class="brand">TEMPEST<span>RADAR</span></div>
+  <div class="brand-sub" id="station-name"></div>
+  <div class="menu-sep"></div>
+  <button id="locations-btn" class="menu-item">⌖&ensp;Custom locations</button>
+  <button id="wall-btn" class="menu-item">▦&ensp;Weather wall</button>
+  <button id="layout-btn" class="menu-item">✎&ensp;Edit layout</button>
+  <button id="settings-btn" class="menu-item">⚙&ensp;Settings</button>
+  <div class="menu-row"><button id="sound-toggle" title="Alert sounds">🔇</button>
+    <span>alert sounds</span></div>
+  <div class="menu-row"><select id="theme-select" title="Theme"></select></div>
+</div>
+<div id="alert-badge" class="badge sev-none" title="active alerts">0 ALERTS</div>
+
+<main>
+  <div id="map"></div>
+  <div id="windy-wrap" hidden><iframe id="windy-frame" title="Windy radar"
+    allow="fullscreen"></iframe></div>
+
+  <div id="ticker" class="ticker" hidden>
+    <span class="ticker-label">◉ NEWS</span>
+    <div class="ticker-viewport"><div class="ticker-track" id="ticker-track"></div></div>
+  </div>
+  <div id="wx-ticker" class="ticker" hidden>
+    <span class="ticker-label wx" id="wx-ticker-label">⚡ WEATHER</span>
+    <div class="ticker-viewport"><div class="ticker-track" id="wx-ticker-track"></div></div>
+  </div>
+
+  <div id="panel-banner" hidden>
+    <div id="banner" class="severity-none">—</div>
+    <div id="alert-details" hidden></div>
+  </div>
+
+    <div id="panel-view" class="dock-group seg">
+      <button id="view-tiles" class="seg-btn on">LOOP</button>
+      <button id="view-l2" class="seg-btn">LEVEL&nbsp;2</button>
+      <button id="view-windy" class="seg-btn">WINDY</button>
+    </div>
+    <div id="panel-site" class="dock-group">
+      <label>SITE</label>
+      <select id="site-select"></select>
+      <input id="site-custom" placeholder="ID…" maxlength="4" hidden>
+    </div>
+    <div id="panel-windy" class="dock-group windy-only" hidden>
+      <label>LAYER</label>
+      <select id="windy-overlay"></select>
+      <label>LEVEL</label>
+      <select id="windy-level"></select>
+    </div>
+    <div id="panel-product" class="dock-group tiles-only">
+      <label>PRODUCT</label>
+      <select id="product-select"></select>
+    </div>
+    <div id="panel-l2" class="dock-group l2-only" hidden>
+      <label>TILT</label>
+      <select id="tilt-select"></select>
+      <label>MOMENT</label>
+      <select id="l2-moment-select"></select>
+      <label class="chk"><input id="l2-smooth" type="checkbox"> smooth</label>
+      <label>PALETTE</label>
+      <select id="palette-select"></select>
+    </div>
+    <div id="panel-frames" class="dock-group radar-only">
+      <label>FRAMES</label>
+      <select id="frames-select">
+        <option>4</option><option>6</option><option selected>10</option>
+        <option>20</option><option>30</option><option>50</option>
+      </select>
+      <label class="chk"><input id="tracks-toggle" type="checkbox"> tracks</label>
+      <label>MAP</label>
+      <select id="basemap-select">
+        <option value="">theme default</option>
+        <option value="dark_all">dark</option>
+        <option value="dark_nolabels">dark · no labels</option>
+        <option value="dark_streets">dark · streets + towns</option>
+        <option value="esri_darkgray">dark gray canvas</option>
+        <option value="light_all">light</option>
+        <option value="light_nolabels">light · no labels</option>
+        <option value="esri_lightgray">light gray canvas</option>
+        <option value="voyager">voyager</option>
+        <option value="osm">openstreetmap</option>
+        <option value="esri_streets">streets</option>
+        <option value="esri_topo">topo + roads</option>
+        <option value="opentopo">opentopo terrain</option>
+        <option value="natgeo">national geographic</option>
+        <option value="usgs_topo">usgs topo</option>
+        <option value="satellite">satellite</option>
+        <option value="satellite_roads">satellite + roads</option>
+        <option value="usgs_imagery">usgs imagery</option>
+      </select>
+    </div>
+
+      <div class="card" id="card-station">
+        <h3 class="drag-handle" id="station-title">STATION</h3>
+        <div class="big" id="temp">--</div>
+        <div class="muted" id="humidity">humidity --%</div>
+      </div>
+      <div class="card" id="card-wind">
+        <h3 class="drag-handle">WIND</h3>
+        <canvas id="wind-dial" width="170" height="170"></canvas>
+      </div>
+      <div class="card" id="card-pressure">
+        <h3 class="drag-handle">PRESSURE</h3>
+        <div id="pressure">-- inHg</div>
+        <canvas id="spark" width="200" height="38"></canvas>
+      </div>
+      <div class="card" id="card-rainsun">
+        <h3 class="drag-handle">RAIN · SUN</h3>
+        <div id="rain">-- in today</div>
+        <div id="uv" class="muted">UV -- · -- W/m²</div>
+      </div>
+      <div class="card" id="card-lightning">
+        <h3 class="drag-handle">LIGHTNING</h3>
+        <div id="lightning">no strikes detected</div>
+      </div>
+
+  <div id="timebar" class="radar-only">
+    <button id="play-btn" title="space">⏸</button>
+    <span id="frame-time">starting…</span>
+    <input id="frame-slider" type="range" min="0" max="0" value="0">
+    <label>spd <input id="speed-slider" type="range" min="100" max="1200" value="450"></label>
+    <label>op <input id="opacity-slider" type="range" min="10" max="100" value="78"></label>
+  </div>
+
+  <div id="statusbar"></div>
+</main>
+
+<div id="layout-panel" hidden>
+  <div class="set-head"><b>✎ Layout</b><button id="layout-done">done</button></div>
+  <div class="set-hint">Drag any panel to move it. Drag a corner ◢ to resize.
+    Uncheck to hide.</div>
+  <div id="layout-list"></div>
+  <label class="lay-row">UI scale
+    <input id="ui-scale" type="range" min="0.75" max="1.5" step="0.05"></label>
+  <label class="lay-row">Panel opacity
+    <input id="panel-alpha" type="range" min="0.4" max="1" step="0.02"></label>
+  <div class="set-foot">
+    <span id="layout-msg" class="set-hint"></span>
+    <span>
+      <button id="layout-export">export</button>
+      <button id="layout-import">import</button>
+      <button id="layout-reset">reset</button>
+    </span>
+  </div>
+</div>
+
+<div id="hist-modal" hidden>
+  <div id="hist-box">
+    <div id="hist-head">
+      <div class="hist-periods">
+        <button class="hist-period" data-h="24">24 h</button>
+        <button class="hist-period" data-h="72">3 d</button>
+        <button class="hist-period" data-h="168">7 d</button>
+      </div>
+      <button id="hist-close">✕</button>
+    </div>
+    <div id="hist-tabs"></div>
+    <div id="hist-stats">loading…</div>
+    <canvas id="hist-canvas" width="680" height="260"></canvas>
+    <div id="hist-hover">&nbsp;</div>
+  </div>
+</div>
+
+<div id="loc-modal" hidden>
+  <div id="loc-box">
+    <div class="set-head"><b>⌖ Custom locations</b><button id="loc-close">✕</button></div>
+    <div id="loc-list"></div>
+    <h4>Add location</h4>
+    <label class="set-row">Name <input id="loc-name" type="text"
+      placeholder="Home, work, grandma's…"></label>
+    <div class="set-row"><input id="loc-geo" type="text"
+      placeholder="search an address or city…"><button id="loc-geo-btn">Search</button></div>
+    <div id="loc-geo-results"></div>
+    <button id="loc-add-pick">📍 …or click a spot on the map</button>
+    <div class="set-hint">Tip: the 🖼 button on a location sets a custom
+      image that replaces its map pin.</div>
+    <input id="loc-file" type="file" accept="image/*" hidden>
+  </div>
+</div>
+
+<div id="settings-modal" hidden>
+  <div id="settings-box">
+    <div class="set-head"><b>Settings</b><button id="settings-close">✕</button></div>
+    <h4>Tempest station</h4>
+    <label class="set-row">Station ID <input id="set-station" type="number" placeholder="e.g. 12345"></label>
+    <label class="set-row">Access token <input id="set-token" type="password"
+      placeholder="leave blank to keep current"></label>
+    <div class="set-hint">tempestwx.com → Settings → Data Authorizations. Station ID is in your station's URL.</div>
+    <label class="set-row">Display label <input id="set-label" type="text"
+      placeholder="shown instead of the station's real name (optional)"></label>
+    <label class="set-check"><input id="set-marker" type="checkbox"> show station marker on map</label>
+    <h4>Location (alerts + map center)</h4>
+    <div class="set-row"><input id="set-address" type="text" placeholder="search an address or city…">
+      <button id="set-geocode">Search</button></div>
+    <div id="geo-results"></div>
+    <div id="geo-current" class="set-hint"></div>
+    <label class="set-row">NOAA tide station <input id="set-tide" type="text"
+      placeholder="optional — e.g. 8443970 (for the wall page)"></label>
+    <h4>Ticker feeds <span class="set-hint">(one per line: Name | URL)</span></h4>
+    <label class="set-row-col">Breaking news<textarea id="set-news" rows="3"></textarea></label>
+    <label class="set-row-col">Severe weather (RSS fallback)<textarea id="set-wx" rows="3"></textarea></label>
+    <div class="set-foot"><span id="set-status"></span><button id="settings-save">Save</button></div>
+  </div>
+</div>
+
+<script src="/static/map-engine.js?v=14"></script>
+<script src="/static/radar-core.js?v=8"></script>
+<script src="/static/timeline.js?v=8"></script>
+<script src="/static/app.js?v=15"></script>
+<script src="/static/overlays.js?v=2"></script>
+<script src="/static/layout.js?v=9"></script>
+<script src="/static/history.js?v=8"></script>
+<script src="/static/settings.js?v=8"></script>
+<script>
+Layout.init();
+const _mb = document.getElementById("menu-btn"), _mm = document.getElementById("main-menu");
+_mb.onclick = e => { e.stopPropagation(); _mm.hidden = !_mm.hidden;
+  _mb.classList.toggle("open", !_mm.hidden); };
+document.addEventListener("click", e => {
+  if (!_mm.hidden && !_mm.contains(e.target)) { _mm.hidden = true;
+    _mb.classList.remove("open"); } });
+</script>
+</body>
+</html>

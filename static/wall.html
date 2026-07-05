@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tempest Radar — Wall</title>
+<link rel="stylesheet" href="/static/style.css?v=7">
+<style>
+  body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  #wall-grid { flex: 1; display: grid; gap: 4px; padding: 4px; min-height: 0;
+    grid-template-columns: repeat(var(--wall-cols, 4), 1fr);
+    grid-auto-rows: 1fr; }
+  .wtile { position: relative; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+    min-height: 0; }
+  .wtile iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .wtile .pick { position: absolute; top: 6px; left: 6px; z-index: 5;
+    display: none; }
+  body.wall-edit .wtile .pick { display: block; }
+  .wtile select { background: var(--bg); color: var(--text);
+    border: 1px solid var(--accent); border-radius: 5px; padding: 3px 7px;
+    font-size: 12px; }
+  .wnative { height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 8px; padding: 12px;
+    text-align: center; }
+  .wnative .huge { font-size: clamp(28px, 5vw, 72px); font-weight: 800; }
+  .wnative .rows { display: grid; grid-template-columns: auto auto;
+    gap: 6px 18px; text-align: left; font-size: clamp(12px, 1.3vw, 18px); }
+  .wnative .rows b { color: var(--good); font-weight: 700; }
+  #wall-bottom { display: flex; align-items: center; gap: 24px;
+    padding: 6px 18px; background: var(--panel);
+    border-top: 1px solid var(--border); }
+  #wb-clock { font-size: 26px; font-weight: 800; min-width: 210px; }
+  #wb-date { color: var(--muted); font-size: 12px; }
+  #wb-tide { flex: 1; display: flex; flex-direction: column;
+    align-items: center; }
+  #wb-tide canvas { width: min(340px, 40vw); height: 44px; }
+  #wb-tide .cap, #wb-moon .cap { color: var(--accent); font-size: 10px;
+    letter-spacing: 1.5px; font-weight: 700; }
+  #wb-moon { display: flex; flex-direction: column; align-items: center; }
+  #wb-alerts { min-width: 220px; text-align: right; font-weight: 800;
+    letter-spacing: 1px; color: var(--good); }
+  #wb-alerts.hot { color: var(--danger); }
+  #wall-tools { position: fixed; top: 8px; right: 8px; z-index: 50;
+    display: flex; gap: 6px; opacity: 0.25; transition: opacity .2s; }
+  #wall-tools:hover { opacity: 1; }
+  #wall-tools button, #wall-tools select { background: var(--panel);
+    color: var(--text); border: 1px solid var(--border); border-radius: 6px;
+    padding: 5px 10px; font: inherit; font-size: 12px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="wall-tools">
+  <select id="wall-cols">
+    <option value="2">2 col</option><option value="3">3 col</option>
+    <option value="4" selected>4 col</option>
+  </select>
+  <button id="wall-edit-btn">✎ tiles</button>
+  <button id="wall-fs">⛶ fullscreen</button>
+  <button onclick="location.href='/'">◂ console</button>
+</div>
+
+<div id="wall-grid"></div>
+
+<div id="wall-bottom">
+  <div><div id="wb-clock">--:--:--</div><div id="wb-date"></div></div>
+  <div id="wb-tide" hidden>
+    <div class="cap" id="wb-tide-cap">TIDE</div>
+    <canvas id="wb-tide-cv" width="340" height="44"></canvas>
+  </div>
+  <div id="wb-moon">
+    <canvas id="wb-moon-cv" width="34" height="34"></canvas>
+    <div class="cap" id="wb-moon-cap">MOON</div>
+  </div>
+  <div id="wb-alerts">NO ACTIVE ALERTS</div>
+</div>
+
+<script src="/static/wall.js?v=8"></script>
+</body>
+</html>
