@@ -262,6 +262,27 @@ $("wb-alerts").onclick = () => {
   if (!panel.hidden) renderWallAlerts();
 };
 
+/* ------------------------------ news ticker ---------------------------- */
+let tickerKey = null;
+function renderWallTicker(items) {
+  const t = $("wall-ticker");
+  t.hidden = !items.length;
+  if (!items.length) return;
+  const key = items.map(i => i.title).join("|");
+  if (key === tickerKey) return;
+  tickerKey = key;
+  const now = Date.now() / 1000;
+  const html = items.map(i => {
+    const fresh = i.epoch && now - i.epoch < 1800;
+    return `<span class="ticker-item${fresh ? " fresh" : ""}">` +
+      `${i.source ? `<b>${esc(i.source)}</b> ` : ""}${esc(i.title)}</span>` +
+      `<span class="ticker-sep">•</span>`;
+  }).join("");
+  const track = $("wall-ticker-track");
+  track.innerHTML = html + html;
+  track.style.setProperty("--ticker-dur", Math.max(40, items.length * 7) + "s");
+}
+
 /* ------------------------------ data poll ------------------------------ */
 async function poll() {
   try {
@@ -280,6 +301,7 @@ async function poll() {
     }
     knownAlertIds = ids;
     if (!$("wall-alerts-panel").hidden) renderWallAlerts();
+    renderWallTicker(lastState.news || []);
     refreshNatives();
   } catch { /* retry next tick */ }
 }
